@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍔 Burger Tycoon - Simulador de Hamburgueria</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --orange: #FF6B35;
+    --dark-orange: #E55A2B;
+    --yellow: #FFD700;
+    --dark-yellow: #E6C200;
+    --green: #4CAF50;
+    --dark-green: #388E3C;
+    --red: #E53935;
+    --dark-red: #C62828;
+    --brown: #5D4037;
+    --dark-brown: #3E2723;
+    --cream: #FFF8E1;
+    --light-cream: #FFFDE7;
+    --dark: #2C1810;
+    --gray: #757575;
+    --blue: #1E88E5;
+    --purple: #7B1FA2;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: linear-gradient(135deg, #1a0a00 0%, #2C1810 50%, #1a0a00 100%);
+    min-height: 100vh;
+    color: var(--dark);
+    overflow-x: hidden;
+  }
+
+  #startScreen {
+    position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(180deg, #1a0a00 0%, #3E2723 40%, #5D4037 100%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 1000; overflow: hidden;
+  }
+
+  .bg-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+
+  .bg-particle {
+    position: absolute; font-size: 2em; opacity: 0.15;
+    animation: floatParticle 8s infinite linear;
+  }
+
+  @keyframes floatParticle {
+    0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.15; } 90% { opacity: 0.15; }
+    100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  @keyframes slideIn { from { transform: translateX(-30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes neonFlicker {
+    0%,19%,21%,23%,25%,54%,56%,100% { text-shadow: 0 0 10px var(--orange),0 0 20px var(--orange),0 0 40px var(--orange),0 0 80px var(--dark-orange); }
+    20%,24%,55% { text-shadow: none; }
+  }
+
+  .start-logo {
+    font-family: 'Fredoka One', cursive; font-size: 4em; color: var(--yellow);
+    animation: neonFlicker 3s infinite, float 3s ease-in-out infinite;
+    margin-bottom: 10px; text-align: center; position: relative; z-index: 2;
+  }
+  .start-subtitle {
+    color: var(--cream); font-size: 1.2em; margin-bottom: 30px;
+    opacity: 0.8; text-align: center; padding: 0 20px; z-index: 2; position: relative;
+  }
+  .start-story {
+    max-width: 600px; background: rgba(0,0,0,0.5); border: 2px solid var(--orange);
+    border-radius: 15px; padding: 25px; margin: 0 20px 30px; color: var(--cream);
+    font-size: 0.95em; line-height: 1.8; text-align: center;
+    animation: slideUp 1s ease 0.5s both; z-index: 2; position: relative;
+    backdrop-filter: blur(5px);
+  }
+  .start-story em { color: var(--yellow); font-style: normal; font-weight: 700; }
+
+  #startBtn {
+    font-family: 'Fredoka One', cursive; font-size: 1.5em; padding: 15px 50px;
+    background: linear-gradient(180deg, var(--orange), var(--dark-orange)); color: white;
+    border: 3px solid var(--yellow); border-radius: 50px; cursor: pointer;
+    transition: all 0.3s; animation: pulse 2s infinite, slideUp 1s ease 1s both;
+    text-transform: uppercase; letter-spacing: 2px; z-index: 2; position: relative;
+  }
+  #startBtn:hover { transform: scale(1.1)!important; box-shadow: 0 0 30px rgba(255,107,53,0.6); }
+
+  #gameContainer { display: none; max-width: 1400px; margin: 0 auto; padding: 10px; }
+
+  .game-header {
+    background: linear-gradient(135deg, var(--brown), var(--dark-brown));
+    border-radius: 15px; padding: 15px 25px; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 10px; border: 2px solid var(--orange);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  }
+  .header-title { font-family: 'Fredoka One', cursive; color: var(--yellow); font-size: 1.5em; }
+  .header-stats { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .stat-badge {
+    background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 25px;
+    color: white; font-weight: 700; font-size: 0.9em;
+    display: flex; align-items: center; gap: 5px;
+    border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s;
+  }
+  .stat-badge.money { border-color: var(--green); }
+  .stat-badge.day { border-color: var(--blue); }
+  .stat-badge.time { border-color: var(--yellow); }
+  .stat-badge.time.late { border-color: var(--red); background: rgba(229,57,53,0.2); animation: pulse 1s infinite; }
+  .stat-badge.satisfaction { border-color: var(--orange); }
+
+  .game-main {
+    display: grid; grid-template-columns: 300px 1fr 300px;
+    gap: 10px; min-height: calc(100vh - 100px);
+  }
+  @media (max-width: 1100px) { .game-main { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--cream); border-radius: 15px; overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 2px solid var(--brown);
+  }
+  .panel-header {
+    background: linear-gradient(135deg, var(--brown), var(--dark-brown));
+    color: var(--yellow); padding: 12px 18px;
+    font-family: 'Fredoka One', cursive; font-size: 1.05em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel-body { padding: 15px; max-height: 500px; overflow-y: auto; }
+  .panel-body::-webkit-scrollbar { width: 6px; }
+  .panel-body::-webkit-scrollbar-track { background: transparent; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--brown); border-radius: 3px; }
+
+  .stock-item {
+    display: flex; align-items: center; padding: 8px 12px; margin-bottom: 6px;
+    background: white; border-radius: 12px; border: 1px solid #e0e0e0;
+    transition: all 0.3s; gap: 10px;
+  }
+  .stock-item:hover { transform: translateX(3px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .stock-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3em; flex-shrink: 0;
+  }
+  .stock-icon.pao { background: linear-gradient(135deg, #F9A825, #F57F17); }
+  .stock-icon.carne { background: linear-gradient(135deg, #6D4C41, #4E342E); }
+  .stock-icon.queijo { background: linear-gradient(135deg, #FFD54F, #FFB300); }
+  .stock-icon.alface { background: linear-gradient(135deg, #66BB6A, #43A047); }
+  .stock-icon.tomate { background: linear-gradient(135deg, #EF5350, #D32F2F); }
+  .stock-icon.bebida { background: linear-gradient(135deg, #42A5F5, #1E88E5); }
+  .stock-icon.molho { background: linear-gradient(135deg, #FF8A65, #E64A19); }
+  .stock-item .name { font-weight: 700; flex: 1; font-size: 0.9em; }
+  .stock-item .qty {
+    background: var(--orange); color: white; padding: 3px 12px;
+    border-radius: 15px; font-weight: 800; min-width: 38px;
+    text-align: center; font-size: 0.9em;
+  }
+  .stock-item .qty.low { background: var(--red); animation: pulse 1s infinite; }
+  .stock-item .qty.out { background: #9E9E9E; }
+
+  .narrative-box {
+    background: white; border-radius: 12px; padding: 16px; margin-bottom: 10px;
+    border-left: 4px solid var(--orange); line-height: 1.7;
+    font-size: 0.92em; animation: slideIn 0.5s ease;
+  }
+  .narrative-box.event { border-left-color: var(--purple); background: #F3E5F5; }
+  .narrative-box.gigaburger { border-left-color: var(--red); background: #FFEBEE; }
+  .narrative-box.success { border-left-color: var(--green); background: #E8F5E9; }
+  .narrative-box.warning { border-left-color: var(--yellow); background: #FFF8E1; }
+  .narrative-box .speaker { font-weight: 700; color: var(--brown); margin-bottom: 5px; }
+
+  .client-card {
+    background: white; border-radius: 15px; padding: 20px; margin-bottom: 12px;
+    border: 2px solid var(--orange); animation: slideUp 0.5s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  }
+  .client-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
+  .client-avatar {
+    font-size: 2em; background: linear-gradient(135deg, var(--orange), var(--yellow));
+    width: 60px; height: 60px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 3px 10px rgba(255,107,53,0.3);
+  }
+  .client-info h3 { color: var(--brown); font-size: 1.1em; }
+  .client-info p { color: var(--gray); font-size: 0.82em; font-style: italic; }
+  .client-order {
+    background: linear-gradient(135deg, #FFF8E1, #FFF3E0);
+    border-radius: 12px; padding: 15px; border: 1px solid #FFE0B2;
+  }
+  .client-order h4 { color: var(--dark-orange); margin-bottom: 10px; font-size: 0.95em; }
+  .order-items { display: flex; flex-wrap: wrap; gap: 6px; }
+  .order-ingredient {
+    display: flex; align-items: center; gap: 5px; padding: 5px 12px;
+    border-radius: 20px; font-size: 0.82em; font-weight: 700;
+    color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  }
+  .order-ingredient.pao { background: linear-gradient(135deg, #F9A825, #F57F17); }
+  .order-ingredient.carne { background: linear-gradient(135deg, #6D4C41, #4E342E); }
+  .order-ingredient.queijo { background: linear-gradient(135deg, #FFC107, #FF8F00); }
+  .order-ingredient.alface { background: linear-gradient(135deg, #66BB6A, #43A047); }
+  .order-ingredient.tomate { background: linear-gradient(135deg, #EF5350, #D32F2F); }
+  .order-ingredient.molho { background: linear-gradient(135deg, #FF8A65, #E64A19); }
+  .order-ingredient.bebida { background: linear-gradient(135deg, #42A5F5, #1E88E5); }
+
+  .assembly-area {
+    background: linear-gradient(180deg, #EFEBE9, #D7CCC8);
+    border-radius: 15px; padding: 20px; margin-bottom: 12px;
+    border: 2px solid #BCAAA4; position: relative; overflow: hidden;
+  }
+  .assembly-area::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(0,0,0,0.02) 40px,rgba(0,0,0,0.02) 41px);
+    pointer-events: none;
+  }
+  .chapa-surface {
+    background: linear-gradient(180deg, #424242, #616161, #424242);
+    border-radius: 12px; padding: 20px; margin-bottom: 15px;
+    position: relative; min-height: 120px;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: flex-end; gap: 0;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+  .chapa-surface::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: repeating-linear-gradient(0deg,transparent,transparent 8px,rgba(255,255,255,0.03) 8px,rgba(255,255,255,0.03) 9px);
+    pointer-events: none;
+  }
+  .chapa-heat {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 20px;
+    background: linear-gradient(0deg, rgba(255,100,0,0.15), transparent);
+    pointer-events: none;
+  }
+
+  @keyframes steamRise {
+    0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.6; }
+    50% { transform: translateY(-30px) translateX(10px) scale(1.5); opacity: 0.3; }
+    100% { transform: translateY(-60px) translateX(-5px) scale(2); opacity: 0; }
+  }
+  .steam-container {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; overflow: hidden;
+  }
+  .steam {
+    position: absolute; bottom: 30%; width: 8px; height: 8px;
+    background: rgba(255,255,255,0.4); border-radius: 50%;
+    filter: blur(3px); animation: steamRise 2s infinite;
+  }
+
+  @keyframes layerDrop {
+    0% { transform: translateY(-40px) scale(1.1); opacity: 0; }
+    60% { transform: translateY(5px) scale(0.98); opacity: 1; }
+    80% { transform: translateY(-2px) scale(1.01); }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes sizzle {
+    0%,100% { box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+    50% { box-shadow: 0 2px 4px rgba(0,0,0,0.3), 0 0 8px rgba(255,150,0,0.3); }
+  }
+
+  .burger-layer {
+    width: 85%; max-width: 260px; text-align: center;
+    font-weight: 800; font-size: 0.85em; position: relative;
+    animation: layerDrop 0.5s ease both; z-index: 1;
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px; letter-spacing: 0.5px;
+  }
+
+  .layer-pao-top {
+    background: linear-gradient(180deg, #E8A317, #D4890E, #C47A0A);
+    color: #5D3A0A; padding: 14px 30px 8px;
+    border-radius: 50% 50% 8px 8px / 60% 60% 8px 8px;
+    box-shadow: 0 -2px 0 #F0B830 inset, 0 3px 6px rgba(0,0,0,0.3);
+    position: relative; overflow: hidden;
+  }
+  .layer-pao-top::before {
+    content: '· · · · ·'; position: absolute; top: 6px; left: 50%;
+    transform: translateX(-50%); font-size: 1.4em; color: #FFF8E1;
+    letter-spacing: 3px; opacity: 0.8; text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+  }
+  .layer-pao-top::after {
+    content: ''; position: absolute; top: 4px; left: 15%;
+    width: 70%; height: 40%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.2), transparent);
+    border-radius: 50%;
+  }
+  .layer-pao-bottom {
+    background: linear-gradient(180deg, #D4890E, #C47A0A, #B5690A);
+    color: #5D3A0A; padding: 8px 30px 12px;
+    border-radius: 8px 8px 40% 40% / 8px 8px 50% 50%;
+    box-shadow: 0 2px 0 #A05508 inset, 0 4px 8px rgba(0,0,0,0.3);
+    position: relative;
+  }
+  .layer-carne {
+    background: linear-gradient(180deg, #5D3A1A, #4A2D14, #3E2210, #4A2D14);
+    color: #FFCCAA; padding: 12px 30px; border-radius: 6px;
+    box-shadow: 0 2px 0 #2C1507 inset, 0 3px 6px rgba(0,0,0,0.4);
+    position: relative; animation: layerDrop 0.5s ease both, sizzle 1.5s ease infinite;
+    overflow: hidden;
+  }
+  .layer-carne::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at 20% 40%,rgba(120,60,20,0.5) 0%,transparent 30%),
+      radial-gradient(circle at 70% 60%,rgba(120,60,20,0.5) 0%,transparent 25%),
+      radial-gradient(circle at 45% 30%,rgba(100,50,15,0.4) 0%,transparent 20%);
+    pointer-events: none;
+  }
+  .layer-queijo {
+    background: linear-gradient(180deg, #FFCA28, #FFB300, #FF8F00);
+    color: #5D3A0A; padding: 6px 35px; border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2); position: relative; overflow: hidden;
+  }
+  .layer-queijo::before {
+    content: ''; position: absolute; bottom: -6px; left: 5%;
+    width: 15px; height: 10px; background: #FFB300;
+    border-radius: 0 0 50% 50%;
+    box-shadow: 40px 2px 0 #FFB300,85px -1px 0 #FFCA28,130px 3px 0 #FF8F00,175px 1px 0 #FFB300;
+  }
+  .layer-queijo::after {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(180deg,rgba(255,255,255,0.3),transparent 50%);
+    pointer-events: none;
+  }
+  .layer-alface {
+    background: linear-gradient(180deg, #81C784, #66BB6A, #4CAF50);
+    color: white; padding: 6px 30px; border-radius: 3px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2); position: relative; overflow: hidden;
+  }
+  .layer-alface::before {
+    content: ''; position: absolute; top: 0; left: -5%; width: 110%; height: 100%;
+    background: radial-gradient(ellipse at 15% 50%,rgba(255,255,255,0.15) 0%,transparent 50%),
+      radial-gradient(ellipse at 50% 50%,rgba(255,255,255,0.1) 0%,transparent 40%),
+      radial-gradient(ellipse at 85% 50%,rgba(255,255,255,0.15) 0%,transparent 50%);
+    pointer-events: none;
+  }
+  .layer-alface::after {
+    content: ''; position: absolute; top: -3px; left: 0; width: 100%; height: 6px;
+    background: repeating-linear-gradient(90deg,transparent 0px,transparent 8px,rgba(0,0,0,0.05) 8px,rgba(0,0,0,0.05) 10px);
+  }
+  .layer-tomate {
+    background: linear-gradient(180deg, #EF5350, #E53935, #D32F2F);
+    color: white; padding: 6px 30px; border-radius: 50% / 30%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.25); position: relative; overflow: hidden;
+  }
+  .layer-tomate::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at 30% 50%,rgba(255,255,255,0.15) 0%,transparent 30%),
+      radial-gradient(circle at 70% 50%,rgba(255,255,255,0.1) 0%,transparent 25%);
+    pointer-events: none;
+  }
+  .layer-molho {
+    background: linear-gradient(180deg, #FF7043, #E64A19);
+    color: white; padding: 4px 30px; border-radius: 2px;
+    box-shadow: 0 2px 3px rgba(0,0,0,0.2); position: relative;
+    overflow: hidden; height: 10px;
+  }
+  .layer-molho::before {
+    content: ''; position: absolute; bottom: -4px; left: 10%;
+    width: 10px; height: 6px; background: #E64A19; border-radius: 0 0 50% 50%;
+    box-shadow: 25px 1px 0 #FF7043,55px -1px 0 #E64A19,90px 2px 0 #FF7043,120px 0 0 #E64A19,155px 1px 0 #FF7043;
+  }
+  .layer-molho::after {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 50%;
+    background: linear-gradient(180deg,rgba(255,255,255,0.25),transparent);
+  }
+
+  .drink-added {
+    position: absolute; top: 10px; right: 15px;
+    display: flex; flex-direction: column; align-items: center;
+    animation: slideUp 0.5s ease;
+  }
+  .drink-cup {
+    width: 35px; height: 50px;
+    background: linear-gradient(180deg, #E3F2FD, #BBDEFB);
+    border-radius: 4px 4px 8px 8px; position: relative;
+    border: 2px solid #90CAF9; box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+  }
+  .drink-cup::before {
+    content: ''; position: absolute; top: -8px; left: 50%;
+    transform: translateX(-50%); width: 42px; height: 8px;
+    background: linear-gradient(180deg, #E53935, #C62828);
+    border-radius: 3px 3px 0 0;
+  }
+  .drink-cup::after {
+    content: ''; position: absolute; top: -14px; left: 50%;
+    transform: translateX(-50%); width: 4px; height: 20px;
+    background: #fff; border-radius: 2px; box-shadow: 0 0 2px rgba(0,0,0,0.2);
+  }
+  .drink-label { font-size: 0.65em; font-weight: 800; color: var(--blue); margin-top: 4px; }
+
+  .empty-chapa {
+    color: rgba(255,255,255,0.3); font-style: italic;
+    font-size: 0.9em; padding: 20px; text-align: center;
+  }
+  .assembly-title {
+    font-family: 'Fredoka One', cursive; color: var(--brown);
+    margin-bottom: 12px; text-align: center; font-size: 1.1em;
+  }
+
+  .ingredient-buttons {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 8px; margin-bottom: 12px;
+  }
+  .ing-btn {
+    padding: 10px 6px; border: 2px solid #e0e0e0; border-radius: 14px;
+    background: white; cursor: pointer; transition: all 0.25s;
+    font-size: 0.78em; font-weight: 700; font-family: 'Nunito', sans-serif;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .ing-btn::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(180deg,rgba(255,255,255,0.8),transparent);
+    pointer-events: none;
+  }
+  .ing-btn:hover:not(:disabled) {
+    border-color: var(--orange); background: #FFF3E0;
+    transform: translateY(-3px); box-shadow: 0 4px 12px rgba(255,107,53,0.2);
+  }
+  .ing-btn:active:not(:disabled) { transform: translateY(0); }
+  .ing-btn:disabled { opacity: 0.35; cursor: not-allowed; filter: grayscale(0.8); }
+  .ing-btn .ing-visual {
+    width: 40px; height: 40px; margin: 0 auto 5px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6em; position: relative;
+  }
+  .ing-btn .ing-visual.pao { background: linear-gradient(135deg, #F9A825, #F57F17); }
+  .ing-btn .ing-visual.carne { background: linear-gradient(135deg, #6D4C41, #4E342E); }
+  .ing-btn .ing-visual.queijo { background: linear-gradient(135deg, #FFD54F, #FFB300); }
+  .ing-btn .ing-visual.alface { background: linear-gradient(135deg, #81C784, #43A047); }
+  .ing-btn .ing-visual.tomate { background: linear-gradient(135deg, #EF5350, #D32F2F); }
+  .ing-btn .ing-visual.molho { background: linear-gradient(135deg, #FF8A65, #E64A19); }
+  .ing-btn .ing-visual.bebida { background: linear-gradient(135deg, #42A5F5, #1E88E5); }
+  .ing-btn .ing-stock {
+    position: absolute; top: -4px; right: -4px;
+    background: var(--orange); color: white; font-size: 0.55em;
+    padding: 1px 5px; border-radius: 10px; font-weight: 800;
+  }
+  .ing-btn .ing-stock.low { background: var(--red); }
+
+  .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+  .action-btn {
+    flex: 1; padding: 12px; border: none; border-radius: 12px;
+    font-family: 'Nunito', sans-serif; font-weight: 800;
+    font-size: 0.9em; cursor: pointer; transition: all 0.25s;
+    min-width: 100px; letter-spacing: 0.5px;
+  }
+  .action-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+  .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-serve { background: linear-gradient(135deg, var(--green), var(--dark-green)); color: white; }
+  .btn-clear { background: linear-gradient(135deg, var(--red), var(--dark-red)); color: white; }
+
+  .shop-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px; margin-bottom: 8px; background: white;
+    border-radius: 12px; border: 1px solid #e0e0e0; transition: all 0.3s;
+  }
+  .shop-item:hover { border-color: var(--green); box-shadow: 0 2px 8px rgba(76,175,80,0.15); }
+  .shop-info { display: flex; align-items: center; gap: 8px; }
+  .shop-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1em; flex-shrink: 0;
+  }
+  .shop-info .details { font-size: 0.82em; }
+  .shop-info .details .name { font-weight: 800; display: block; color: var(--dark-brown); }
+  .shop-info .details .desc { color: var(--gray); font-size: 0.88em; }
+  .shop-buy {
+    padding: 6px 14px;
+    background: linear-gradient(135deg, var(--green), var(--dark-green));
+    color: white; border: none; border-radius: 10px;
+    font-family: 'Nunito', sans-serif; font-weight: 800;
+    font-size: 0.78em; cursor: pointer; transition: all 0.25s; white-space: nowrap;
+  }
+  .shop-buy:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 3px 8px rgba(76,175,80,0.3); }
+  .shop-buy:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .big-btn {
+    width: 100%; padding: 14px; border: none; border-radius: 12px;
+    font-family: 'Fredoka One', cursive; font-size: 1.05em;
+    cursor: pointer; transition: all 0.3s; margin-bottom: 8px; letter-spacing: 1px;
+  }
+  .big-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.25); }
+  .big-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-open { background: linear-gradient(135deg, var(--orange), var(--dark-orange)); color: white; }
+  .btn-close { background: linear-gradient(135deg, var(--red), var(--dark-red)); color: white; }
+  .btn-next { background: linear-gradient(135deg, var(--blue), #1565C0); color: white; }
+  .btn-end-day {
+    background: linear-gradient(135deg, #7B1FA2, #6A1B9A); color: white;
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 20px rgba(123,31,162,0.4);
+  }
+
+  .log-entry {
+    padding: 6px 10px; margin-bottom: 4px; border-radius: 8px;
+    font-size: 0.8em; line-height: 1.5; border-left: 3px solid var(--gray);
+    animation: slideIn 0.3s ease;
+  }
+  .log-entry.sale { border-left-color: var(--green); background: #E8F5E9; }
+  .log-entry.buy { border-left-color: var(--blue); background: #E3F2FD; }
+  .log-entry.complaint { border-left-color: var(--red); background: #FFEBEE; }
+  .log-entry.event { border-left-color: var(--purple); background: #F3E5F5; }
+  .log-entry .log-time { font-weight: 800; color: var(--gray); }
+
+  .progress-container {
+    margin-top: 5px; padding: 12px; background: white;
+    border-radius: 12px; border: 1px solid #e0e0e0;
+  }
+  .progress-label {
+    font-size: 0.78em; font-weight: 800; color: var(--brown);
+    margin-bottom: 6px; display: flex; justify-content: space-between;
+  }
+  .progress-bar-bg {
+    width: 100%; height: 14px; background: #e0e0e0;
+    border-radius: 7px; overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--orange), var(--yellow), var(--orange));
+    background-size: 200% 100%; border-radius: 7px;
+    transition: width 0.8s ease; animation: shimmer 2s infinite linear;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  .modal-overlay {
+    display: none; position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%; background: rgba(0,0,0,0.7);
+    z-index: 500; align-items: center; justify-content: center;
+    padding: 20px; backdrop-filter: blur(3px);
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--cream); border-radius: 20px; max-width: 550px;
+    width: 100%; overflow: hidden; animation: slideUp 0.5s ease;
+    border: 3px solid var(--orange); max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .modal-header {
+    background: linear-gradient(135deg, var(--brown), var(--dark-brown));
+    color: var(--yellow); padding: 20px; text-align: center;
+    font-family: 'Fredoka One', cursive; font-size: 1.2em;
+  }
+  .modal-body { padding: 25px; }
+  .report-row {
+    display: flex; justify-content: space-between; padding: 10px 0;
+    border-bottom: 1px solid #e0e0e0; font-size: 1em;
+  }
+  .report-row:last-child { border-bottom: none; }
+  .report-row .label { font-weight: 600; }
+  .report-row .value { font-weight: 800; }
+  .report-row .value.positive { color: var(--green); }
+  .report-row .value.negative { color: var(--red); }
+  .report-row.total {
+    border-top: 2px solid var(--brown); margin-top: 10px;
+    padding-top: 15px; font-size: 1.15em;
+  }
+  .event-choices { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+  .event-choice {
+    padding: 14px 18px; border: 2px solid var(--brown); border-radius: 12px;
+    background: white; cursor: pointer; transition: all 0.25s;
+    font-family: 'Nunito', sans-serif; font-size: 0.95em;
+    text-align: left; font-weight: 600;
+  }
+  .event-choice:hover {
+    border-color: var(--orange); background: #FFF3E0;
+    transform: translateX(5px); box-shadow: 0 2px 8px rgba(255,107,53,0.2);
+  }
+
+  #endScreen {
+    display: none; position: fixed; top: 0; left: 0;
+    width: 100%; height: 100%; z-index: 1000;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  #endScreen.active { display: flex; }
+  .end-content { text-align: center; max-width: 500px; }
+  .end-emoji { font-size: 5em; margin-bottom: 20px; animation: float 2s ease-in-out infinite; }
+  .end-title { font-family: 'Fredoka One', cursive; font-size: 2.5em; color: var(--yellow); margin-bottom: 15px; }
+  .end-text { color: var(--cream); font-size: 1.1em; line-height: 1.8; margin-bottom: 30px; }
+  #restartBtn {
+    font-family: 'Fredoka One', cursive; font-size: 1.2em; padding: 12px 40px;
+    background: var(--orange); color: white; border: 2px solid var(--yellow);
+    border-radius: 30px; cursor: pointer; transition: all 0.3s;
+  }
+  #restartBtn:hover { transform: scale(1.1); box-shadow: 0 0 20px rgba(255,107,53,0.5); }
+
+  .notification {
+    position: fixed; top: 20px; right: 20px; padding: 14px 22px;
+    border-radius: 12px; color: white; font-weight: 800; font-size: 0.9em;
+    z-index: 999; animation: slideUp 0.3s ease; max-width: 350px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  }
+  .notification.success { background: linear-gradient(135deg, var(--green), var(--dark-green)); }
+  .notification.error { background: linear-gradient(135deg, var(--red), var(--dark-red)); }
+  .notification.info { background: linear-gradient(135deg, var(--blue), #1565C0); }
+  .notification.warning { background: linear-gradient(135deg, var(--orange), var(--dark-orange)); }
+
+  .time-indicator {
+    text-align: center; padding: 8px; border-radius: 8px;
+    font-weight: 700; font-size: 0.85em; margin-bottom: 10px;
+  }
+  .time-indicator.morning { background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082; }
+  .time-indicator.afternoon { background: #FFF3E0; color: #E65100; border: 1px solid #FFCC80; }
+  .time-indicator.evening { background: #FCE4EC; color: #C62828; border: 1px solid #F8BBD0; }
+  .time-indicator.closing { background: #FFEBEE; color: #B71C1C; border: 1px solid #EF9A9A; animation: pulse 1.5s infinite; }
+  .time-indicator.ended { background: #E8EAF6; color: #283593; border: 1px solid #9FA8DA; }
+
+  .waiting-visual { text-align: center; padding: 30px 20px; }
+  .waiting-visual .icon { font-size: 3.5em; margin-bottom: 10px; animation: float 3s ease-in-out infinite; }
+  .waiting-visual h2 { font-family: 'Fredoka One', cursive; color: var(--brown); margin-bottom: 8px; }
+  .waiting-visual p { color: var(--gray); font-size: 0.9em; }
+
+  /* Empty queue special */
+  .queue-empty-box {
+    background: linear-gradient(135deg, #E8EAF6, #C5CAE9);
+    border: 2px solid #7986CB; border-radius: 15px; padding: 25px;
+    text-align: center; animation: slideUp 0.5s ease;
+  }
+  .queue-empty-box .icon { font-size: 3em; margin-bottom: 10px; }
+  .queue-empty-box h3 { font-family: 'Fredoka One', cursive; color: #283593; margin-bottom: 8px; }
+  .queue-empty-box p { color: #3949AB; font-size: 0.9em; line-height: 1.6; }
+
+  @media (max-width: 768px) {
+    .start-logo { font-size: 2.5em; }
+    .game-header { flex-direction: column; align-items: flex-start; }
+    .header-stats { width: 100%; justify-content: space-around; }
+    .ingredient-buttons { grid-template-columns: repeat(2, 1fr); }
+    .burger-layer { max-width: 200px; font-size: 0.75em; }
+  }
+</style>
+</head>
+<body>
+
+<div id="startScreen">
+  <div class="bg-particles" id="bgParticles"></div>
+  <div class="start-logo">🍔 Burger Tycoon</div>
+  <div class="start-subtitle">Simulador de Hamburgueria - O Legado de Seu Nonô</div>
+  <div class="start-story">
+    Você limpa o pó da placa de neon. O balcão de madeira ainda tem as marcas de faca do seu avô.
+    Você tem <em>R$ 200,00</em> no caixa e uma conta de luz para pagar em 3 dias.<br><br>
+    O <em>Sr. Magnata</em>, da GigaBurger, acabou de passar buzinando com seu carro de luxo.<br><br>
+    No fundo do armário, há um <em>cofre misterioso</em> com a receita do molho secreto do Seu Nonô.
+    Dizem que só abre quando você acumular <em>R$ 5.000,00</em> de lucro.<br><br>
+    🔥 <em>É hora de mostrar quem manda na chapa.</em>
+  </div>
+  <button id="startBtn" onclick="startGame()">🍳 Abrir a Lanchonete</button>
+</div>
+
+<div id="gameContainer">
+  <div class="game-header">
+    <div class="header-title">🍔 Lanchonete do Seu Nonô</div>
+    <div class="header-stats">
+      <div class="stat-badge money">💰 <span id="hMoney">R$ 200,00</span></div>
+      <div class="stat-badge day">📅 <span id="hDay">Dia 1</span></div>
+      <div class="stat-badge time" id="timeBadge">🕐 <span id="hTime">05:00</span></div>
+      <div class="stat-badge satisfaction">😊 <span id="hSat">100%</span></div>
+    </div>
+  </div>
+  <div class="game-main">
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="panel"><div class="panel-header">📦 Estoque</div><div class="panel-body" id="stockPanel"></div></div>
+      <div class="panel"><div class="panel-header">🛒 Loja do Fornecedor</div><div class="panel-body" id="shopPanel"></div></div>
+      <div class="panel"><div class="panel-header">🔒 Cofre do Seu Nonô</div>
+        <div class="panel-body">
+          <div class="progress-container">
+            <div class="progress-label"><span>Lucro Acumulado</span><span id="profitLabel">R$ 0 / R$ 5.000</span></div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="profitBar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="panel" style="flex:0 0 auto;"><div class="panel-header">📜 Narrativa</div><div class="panel-body" id="narrativePanel" style="max-height:180px;"></div></div>
+      <div class="panel" style="flex:1;"><div class="panel-header">🍳 Área de Atendimento</div><div class="panel-body" id="servicePanel" style="max-height:none;"></div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div class="panel" style="flex:1;"><div class="panel-header">📋 Registro do Dia</div><div class="panel-body" id="logPanel" style="max-height:600px;"></div></div>
+      <div class="panel"><div class="panel-header">⚡ Ações</div><div class="panel-body" id="actionsPanel"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="reportModal">
+  <div class="modal"><div class="modal-header" id="reportTitle">📊 Relatório do Dia</div><div class="modal-body" id="reportBody"></div></div>
+</div>
+<div class="modal-overlay" id="eventModal">
+  <div class="modal"><div class="modal-header" id="eventTitle">⚡ Evento</div><div class="modal-body" id="eventBody"></div></div>
+</div>
+<div id="endScreen">
+  <div class="end-content">
+    <div class="end-emoji" id="endEmoji">🏆</div>
+    <div class="end-title" id="endTitle">Fim do Jogo</div>
+    <div class="end-text" id="endText"></div>
+    <button id="restartBtn" onclick="location.reload()">🔄 Jogar Novamente</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const c=document.getElementById('bgParticles');
+  const e=['🍔','🍟','🧀','🥩','🍞','🥤','🥬','🍅','🔥','⭐'];
+  for(let i=0;i<20;i++){
+    const p=document.createElement('div');p.className='bg-particle';
+    p.textContent=e[Math.floor(Math.random()*e.length)];
+    p.style.left=Math.random()*100+'%';
+    p.style.animationDelay=Math.random()*8+'s';
+    p.style.animationDuration=(6+Math.random()*6)+'s';
+    p.style.fontSize=(1.2+Math.random()*1.5)+'em';
+    c.appendChild(p);
+  }
+})();
+
+const OPEN_HOUR=8, CLOSE_HOUR=21, WARN_HOUR=20;
+const TIME_SERVICE=20, TIME_SERVICE_FAST=10, TIME_BUY=5;
+
+const G={
+  money:200,day:1,hour:5,minute:0,phase:'prep',
+  stock:{pao:10,carne:10,queijo:10,alface:0,tomate:0,bebida:0,molho:0},
+  dailyRevenue:0,dailyCost:0,dailySatisfaction:[],
+  totalProfit:0,clientsServed:0,
+  currentClient:null,currentAssembly:[],
+  log:[],clientQueue:[],
+  eventsTriggered:[],
+  lightBillPaid:false,juninhoHelped:false,juninhoHired:false,
+  shady_meat:false,inspectionDone:false,
+  chapaUpgrade:false,secretSauce:false,gameOver:false,
+  queueFinished:false // NOVA FLAG: fila acabou
+};
+
+const INGREDIENTS={
+  pao:{name:'Pão',emoji:'🍞',cost:0.5},
+  carne:{name:'Carne',emoji:'🥩',cost:1.5},
+  queijo:{name:'Queijo',emoji:'🧀',cost:0.8},
+  alface:{name:'Alface',emoji:'🥬',cost:0.5},
+  tomate:{name:'Tomate',emoji:'🍅',cost:0.5},
+  molho:{name:'Molho',emoji:'🫙',cost:0.3}
+};
+
+const SHOP=[
+  {id:'pao',name:'Pães',emoji:'🍞',price:5,qty:10,desc:'10 unidades'},
+  {id:'carne',name:'Carnes',emoji:'🥩',price:15,qty:10,desc:'10 porções'},
+  {id:'queijo',name:'Queijos',emoji:'🧀',price:8,qty:10,desc:'10 fatias'},
+  {id:'alface',name:'Alface',emoji:'🥬',price:5,qty:10,desc:'10 porções'},
+  {id:'tomate',name:'Tomate',emoji:'🍅',price:5,qty:10,desc:'10 fatias'},
+  {id:'bebida',name:'Bebidas',emoji:'🥤',price:20,qty:10,desc:'10 unidades'},
+  {id:'molho',name:'Molho',emoji:'🫙',price:3,qty:10,desc:'10 porções'}
+];
+
+const CLIENT_POOL=[
+  {name:'Dona Márcia',emoji:'👩‍🦳',personality:'Vizinha fofoqueira. Adora dar dicas!',type:'marcia',
+   orders:[{items:['pao','carne','queijo','pao'],name:'Hambúrguer Simples',price:15},
+           {items:['pao','carne','queijo','alface','pao'],name:'Hambúrguer com Salada',price:18}],
+   dialogOnServe:['"Ficou bom! A GigaBurger tá com esgoto!" 😏','"Igualzinho o do Nonô... quase." 😌']},
+  {name:'Juninho',emoji:'👦',personality:'Estudante. Divulga a loja no Insta!',type:'juninho',
+   orders:[{items:['pao','carne','pao'],name:'Hambúrguer Básico',price:12},
+           {items:['pao','carne','queijo','pao'],name:'Hambúrguer Simples',price:15}],
+   dialogOnServe:['"Valeu chefe! Vou postar!" 📱','"Melhor que GigaBurger!" 🔥']},
+  {name:'Sr. Roberto',emoji:'👨‍💼',personality:'Empresário. Exige perfeição.',
+   orders:[{items:['pao','carne','queijo','alface','tomate','pao'],name:'Hambúrguer Completo',price:22},
+           {items:['pao','carne','carne','queijo','queijo','pao'],name:'Duplo Smash',price:25}],
+   dialogOnServe:['"Rápido e bom." ⭐','"Nada mal." 🤝']},
+  {name:'Ana Clara',emoji:'👩‍🎤',personality:'Influenciadora. Vai pros stories!',
+   orders:[{items:['pao','carne','queijo','alface','tomate','molho','pao'],name:'Hambúrguer Gourmet',price:28},
+           {items:['pao','carne','queijo','molho','pao'],name:'Smash com Molho',price:20}],
+   dialogOnServe:['"OMG que foto!" 📸✨','"Vocês PRECISAM vir aqui!" 🎉']},
+  {name:'Seu Geraldo',emoji:'👴',personality:'Amigo do avô. Nostálgico.',
+   orders:[{items:['pao','carne','queijo','pao'],name:'O Clássico do Nonô',price:15}],
+   dialogOnServe:['"Seu avô ficaria orgulhoso." 🥲']},
+  {name:'Fernanda',emoji:'👩‍⚕️',personality:'Médica. Valoriza frescor.',
+   orders:[{items:['pao','carne','alface','tomate','pao'],name:'Hambúrguer Saudável',price:20},
+           {items:['pao','carne','queijo','alface','tomate','pao'],name:'Completo Light',price:22}],
+   dialogOnServe:['"Ingredientes frescos!" 💚']},
+  {name:'Tiozão Carlos',emoji:'🧔',personality:'Caminhoneiro. Come MUITO.',
+   orders:[{items:['pao','carne','carne','queijo','queijo','pao'],name:'Duplo Reforçado',price:25},
+           {items:['pao','carne','carne','carne','queijo','pao'],name:'Triplo Monstro',price:30}],
+   dialogOnServe:['"ISSO é hambúrguer!" 💪','"Na estrada só lembro daqui!" 🚛']},
+  {name:'Casal Jovem',emoji:'👫',personality:'Namorando. Querem algo especial!',
+   orders:[{items:['pao','carne','queijo','alface','pao'],name:'Combo Casal',price:22}],
+   dialogOnServe:['"Lugar perfeito pra date!" 💕']}
+];
+
+const DAY_INTROS=[
+  'Sol nasce sobre a lanchonete. Cheiro de café velho. A placa brilha fraca. Hora de provar seu valor! 🌅',
+  'Dia chuvoso. GigaBurger com brindes, mas dois curiosos olham sua porta. ☔',
+  'Manhã de sol. Dona Márcia: "Hoje vai ter movimento!" Tempero do avô mais forte. ☀️',
+  'Sonhou com Seu Nonô cozinhando. Acordou inspirado. O cofre brilha. ✨',
+  'Sr. Magnata passou olhando com desprezo. Motivação extra. 😤',
+  'Dia claro, samba no rádio. Perfeito pra cozinhar! 🎵',
+  'Ventou forte. A placa quase caiu, mas resistiu. Como você. 💪',
+  'Foto do Seu Nonô sorrindo com espátula. Bora honrar! 📸',
+  'Bairro cheira a hambúrguer. GigaBurger em promoção... nada supera artesanal! 🍔',
+  'Névoa na rua. Poucos carros. Fãs verdadeiros sempre vêm. 🌫️'
+];
+
+const STORY_EVENTS=[
+  {id:'shady_supplier',day:3,title:'🥩 Fornecedor Suspeito',
+   text:'Homem de boné: "Carne por METADE! 20 porções R$ 15. Ninguém vai saber..."',
+   choices:[{text:'✅ Aceitar (20 carnes / R$ 15)',action:'accept_shady'},
+            {text:'❌ Recusar',action:'refuse_shady'}]},
+  {id:'light_bill',day:3,title:'💡 Conta de Luz!',
+   text:'Carteiro: conta de R$ 50. Não pagar = energia cortada amanhã!',
+   choices:[{text:'💰 Pagar R$ 50 agora',action:'pay_bill'},
+            {text:'⏰ Depois (arriscado!)',action:'delay_bill'}]},
+  {id:'juninho_job',day:5,title:'👦 Juninho pede emprego',
+   text:'Juninho: "Chefe, R$ 30/dia e ajudo a atender mais rápido!" (10min/cliente)',
+   choices:[{text:'✅ Contratar (R$ 30/dia)',action:'hire_juninho'},
+            {text:'❌ Recusar',action:'refuse_juninho'}]},
+  {id:'magnata_offer',day:7,title:'🏢 Proposta do Sr. Magnata',
+   text:'"Garoto, R$ 2.000 pelo ponto. Fecha essa espelunca."',
+   choices:[{text:'💰 Aceitar (Game Over)',action:'sell_out'},
+            {text:'🔥 "Nunca! A alma do bairro!"',action:'refuse_magnata'}]},
+  {id:'food_critic',day:10,title:'🎩 Crítico Gastronômico',
+   text:'Chef Armando visita lanchonetes hoje! Pedido PERFEITO!',
+   choices:[{text:'✅ Vou caprichar!',action:'accept_critic'}]},
+  {id:'inspection',day:0,title:'🚨 Fiscalização!',
+   text:'Vigilância Sanitária! Denúncia de carne duvidosa!',
+   choices:[{text:'😰 Enfrentar',action:'face_inspection'}]},
+  {id:'chapa_upgrade',day:0,title:'🔧 Upgrade de Chapa!',
+   text:'Vendedor: "Chapa profissional! Mais rápido. R$ 300!"',
+   choices:[{text:'✅ Comprar (R$ 300)',action:'buy_chapa'},
+            {text:'❌ Não agora',action:'refuse_chapa'}]}
+];
+
+function fmt(n){return 'R$ '+n.toFixed(2).replace('.',',')}
+function timeStr(){return String(G.hour).padStart(2,'0')+':'+String(G.minute).padStart(2,'0')}
+function randomFrom(a){return a[Math.floor(Math.random()*a.length)]}
+function advanceTime(m){G.minute+=m;while(G.minute>=60){G.minute-=60;G.hour++}if(G.hour>23){G.hour=23;G.minute=59}}
+function getTimeOfDay(){if(G.hour<12)return'morning';if(G.hour<17)return'afternoon';if(G.hour<WARN_HOUR)return'evening';return'closing'}
+function getTimeLabel(){const t=getTimeOfDay();return{morning:'☀️ Manhã',afternoon:'🌤️ Tarde',evening:'🌅 Fim de Tarde',closing:'🌙 Noite'}[t]}
+function isClosingTime(){return G.hour>=CLOSE_HOUR}
+function isWarningTime(){return G.hour>=WARN_HOUR}
+
+function notify(msg,type='info'){
+  const el=document.createElement('div');el.className='notification '+type;
+  el.textContent=msg;document.body.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity 0.5s'},2500);
+  setTimeout(()=>el.remove(),3000);
+}
+function addLog(text,type=''){G.log.push({time:timeStr(),text,type});renderLog()}
+function addNarrative(text,type=''){
+  const p=document.getElementById('narrativePanel');
+  const d=document.createElement('div');d.className='narrative-box '+type;
+  d.innerHTML=text;p.prepend(d);while(p.children.length>10)p.removeChild(p.lastChild);
+}
+
+function getBurgerLayerHTML(ing,i,total){
+  let cls='',lbl='';
+  switch(ing){
+    case'pao':
+      if(i===0){cls='layer-pao-top';lbl='🍞 Pão (topo)'}
+      else if(i===total-1){cls='layer-pao-bottom';lbl='🍞 Pão (base)'}
+      else{cls='layer-pao-bottom';lbl='🍞 Pão'}break;
+    case'carne':cls='layer-carne';lbl='🥩 Carne';break;
+    case'queijo':cls='layer-queijo';lbl='🧀 Queijo';break;
+    case'alface':cls='layer-alface';lbl='🥬 Alface';break;
+    case'tomate':cls='layer-tomate';lbl='🍅 Tomate';break;
+    case'molho':cls='layer-molho';lbl='';break;
+  }
+  return`<div class="burger-layer ${cls}" style="animation-delay:${i*0.1}s">${lbl}</div>`;
+}
+
+function renderHeader(){
+  document.getElementById('hMoney').textContent=fmt(G.money);
+  document.getElementById('hDay').textContent='Dia '+G.day;
+  document.getElementById('hTime').textContent=timeStr();
+  const tb=document.getElementById('timeBadge');
+  tb.className='stat-badge time'+(isWarningTime()&&G.phase==='open'?' late':'');
+  const avg=G.dailySatisfaction.length>0?Math.round(G.dailySatisfaction.reduce((a,b)=>a+b,0)/G.dailySatisfaction.length):100;
+  document.getElementById('hSat').textContent=avg+'%';
+  const pct=Math.min(100,(Math.max(0,G.totalProfit)/5000)*100);
+  document.getElementById('profitBar').style.width=pct+'%';
+  document.getElementById('profitLabel').textContent=fmt(Math.max(0,G.totalProfit))+' / R$ 5.000';
+}
+
+function renderStock(){
+  const p=document.getElementById('stockPanel');p.innerHTML='';
+  [{key:'pao',name:'Pão',emoji:'🍞'},{key:'carne',name:'Carne',emoji:'🥩'},
+   {key:'queijo',name:'Queijo',emoji:'🧀'},{key:'alface',name:'Alface',emoji:'🥬'},
+   {key:'tomate',name:'Tomate',emoji:'🍅'},{key:'bebida',name:'Bebida',emoji:'🥤'},
+   {key:'molho',name:'Molho',emoji:'🫙'}].forEach(item=>{
+    const q=G.stock[item.key],qc=q===0?'out':q<=3?'low':'';
+    const d=document.createElement('div');d.className='stock-item';
+    d.innerHTML=`<div class="stock-icon ${item.key}">${item.emoji}</div><span class="name">${item.name}</span><span class="qty ${qc}">${q}</span>`;
+    p.appendChild(d);
+  });
+}
+
+function renderShop(){
+  const p=document.getElementById('shopPanel');p.innerHTML='';
+  SHOP.forEach(item=>{
+    const can=G.money>=item.price;const d=document.createElement('div');d.className='shop-item';
+    d.innerHTML=`<div class="shop-info"><div class="shop-icon" style="background:linear-gradient(135deg,var(--orange),var(--dark-orange))">${item.emoji}</div>
+      <div class="details"><span class="name">${item.name}</span><span class="desc">${item.desc} - ${fmt(item.price)}</span></div></div>
+      <button class="shop-buy" ${can?'':'disabled'} onclick="buyItem('${item.id}')">Comprar</button>`;
+    p.appendChild(d);
+  });
+}
+
+function renderLog(){
+  const p=document.getElementById('logPanel');p.innerHTML='';
+  G.log.slice(-30).reverse().forEach(e=>{
+    const d=document.createElement('div');d.className='log-entry '+e.type;
+    d.innerHTML=`<span class="log-time">[${e.time}]</span> ${e.text}`;p.appendChild(d);
+  });
+}
+
+function renderActions(){
+  const p=document.getElementById('actionsPanel');p.innerHTML='';
+
+  if(G.phase==='prep'){
+    p.innerHTML=`<button class="big-btn btn-open" onclick="openDoors()">🚪 Abrir as Portas (${OPEN_HOUR}:00)</button>
+      <p style="text-align:center;color:var(--gray);font-size:0.82em;margin-top:5px;">Compre ingredientes antes!<br>${OPEN_HOUR}:00 - ${CLOSE_HOUR}:00</p>`;
+    return;
+  }
+
+  if(G.phase==='closed'){
+    p.innerHTML=`<button class="big-btn btn-next" onclick="nextDay()">☀️ Próximo Dia</button>`;
+    return;
+  }
+
+  // phase === 'open'
+  let html='';
+  const tod=getTimeOfDay();
+  html+=`<div class="time-indicator ${G.queueFinished?'ended':tod}">${G.queueFinished?'✅ Fila vazia':getTimeLabel()} - ${timeStr()}</div>`;
+
+  // PRIORIDADE 1: Fila acabou (sem cliente e sem fila) → botão TERMINAR EXPEDIENTE
+  if(G.queueFinished && !G.currentClient){
+    html+=`<button class="big-btn btn-end-day" onclick="closeDay()">
+      🏁 Terminar Expediente
+    </button>
+    <p style="text-align:center;color:var(--purple);font-weight:700;font-size:0.85em;margin-top:5px;">
+      Todos os clientes foram atendidos! 🎉
+    </p>`;
+  }
+  // PRIORIDADE 2: Passou do horário de fechar
+  else if(isClosingTime()&&!G.currentClient){
+    html+=`<button class="big-btn btn-close" style="animation:pulse 1.5s infinite;box-shadow:0 0 15px rgba(229,57,53,0.4);" onclick="closeDay()">
+      🌙 Fechar o Dia (${CLOSE_HOUR}:00)
+    </button>
+    <p style="text-align:center;color:var(--red);font-weight:800;font-size:0.85em;margin-top:5px;">⏰ ${timeStr()} - Expediente acabou!</p>`;
+  }
+  // PRIORIDADE 3: Sem cliente, pode chamar próximo
+  else if(!G.currentClient){
+    html+=`<button class="big-btn btn-open" onclick="nextClient()">📢 Chamar Próximo Cliente</button>`;
+    const rem=G.clientQueue.length;
+    if(isWarningTime()){
+      html+=`<button class="big-btn btn-close" style="margin-top:4px;" onclick="closeDay()">🌙 Fechar Mais Cedo</button>
+        <p style="text-align:center;color:var(--orange);font-size:0.82em;margin-top:5px;">⚠️ ${WARN_HOUR}:00+ | ${rem} na fila</p>`;
+    }else{
+      html+=`<p style="text-align:center;color:var(--gray);font-size:0.82em;margin-top:5px;">👥 ${rem} cliente${rem!==1?'s':''} na fila | Fecha às ${CLOSE_HOUR}:00</p>`;
+    }
+  }
+  // PRIORIDADE 4: Atendendo
+  else{
+    html+=`<p style="text-align:center;color:var(--orange);font-weight:700;font-size:0.85em;">🍔 Atendendo ${G.currentClient.name}...</p>`;
+  }
+
+  p.innerHTML=html;
+}
+
+function renderService(){
+  const p=document.getElementById('servicePanel');
+
+  if(G.phase==='prep'){
+    p.innerHTML=`<div class="waiting-visual"><div class="icon">🌅</div><h2>Preparação - ${timeStr()}</h2>
+      <p>Confira estoque e compre ingredientes!</p>
+      <p style="font-size:0.82em;margin-top:8px;color:var(--orange);">Funciona ${OPEN_HOUR}:00 - ${CLOSE_HOUR}:00</p></div>`;
+    return;
+  }
+  if(G.phase==='closed'){
+    p.innerHTML=`<div class="waiting-visual"><div class="icon">🌙</div><h2>Dia Encerrado</h2>
+      <p>Descanse. Clique "Próximo Dia".</p></div>`;
+    return;
+  }
+
+  // FILA VAZIA - sem cliente
+  if(G.queueFinished&&!G.currentClient){
+    const served=G.dailySatisfaction.length;
+    p.innerHTML=`<div class="queue-empty-box">
+      <div class="icon">🎉</div>
+      <h3>Fila Vazia!</h3>
+      <p>Todos os <strong>${served}</strong> clientes de hoje foram atendidos!<br>
+      São <strong>${timeStr()}</strong>.<br><br>
+      Clique em <strong>"🏁 Terminar Expediente"</strong> para encerrar o dia e ver o relatório.</p>
+    </div>`;
+    return;
+  }
+
+  // Passou horário sem cliente
+  if(isClosingTime()&&!G.currentClient){
+    p.innerHTML=`<div class="waiting-visual"><div class="icon">🌙</div><h2>Hora de Fechar!</h2>
+      <p>São ${timeStr()}. Expediente acabou!</p>
+      <p style="color:var(--red);font-weight:700;margin-top:8px;">Clique "Fechar o Dia".</p></div>`;
+    return;
+  }
+
+  // Sem cliente, aguardando
+  if(!G.currentClient){
+    const rem=G.clientQueue.length;
+    p.innerHTML=`<div class="waiting-visual"><div class="icon">🪑</div><h2>Aguardando Clientes</h2>
+      <p>Clique "Chamar Próximo Cliente"!</p>
+      <p style="font-size:0.82em;margin-top:5px;color:var(--gray);">
+        🕐 ${timeStr()} | 👥 ${rem} na fila | ⏰ Fecha ${CLOSE_HOUR}:00
+        ${isWarningTime()?'<br><span style="color:var(--orange);font-weight:700;">⚠️ Últimas horas!</span>':''}
+      </p></div>`;
+    return;
+  }
+
+  // ATENDENDO
+  const client=G.currentClient,order=client.currentOrder;
+  const hasDrink=G.currentAssembly.includes('bebida_added');
+  const assembled=G.currentAssembly.filter(i=>i!=='bebida_added');
+  const rem=G.clientQueue.length;
+
+  let steam='';
+  if(assembled.length>0)for(let i=0;i<6;i++)
+    steam+=`<div class="steam" style="left:${15+Math.random()*70}%;animation-delay:${Math.random()*2}s;animation-duration:${1.5+Math.random()}s"></div>`;
+
+  let burger='';
+  if(assembled.length>0)for(let i=0;i<assembled.length;i++)burger+=getBurgerLayerHTML(assembled[i],i,assembled.length);
+  else burger='<div class="empty-chapa">Clique nos ingredientes abaixo...</div>';
+
+  const pills=order.items.map(i=>`<span class="order-ingredient ${i}">${INGREDIENTS[i].emoji} ${INGREDIENTS[i].name}</span>`).join('');
+
+  let btns='';
+  Object.entries(INGREDIENTS).forEach(([k,v])=>{
+    const q=G.stock[k],dis=q<=0,sc=q<=3&&q>0?'low':'';
+    btns+=`<button class="ing-btn" ${dis?'disabled':''} onclick="addIngredient('${k}')">
+      <div class="ing-visual ${k}">${v.emoji}<span class="ing-stock ${sc}">${q}</span></div>${v.name}</button>`;
+  });
+  if(G.stock.bebida>0&&!hasDrink)
+    btns+=`<button class="ing-btn" onclick="addDrink()" style="border-color:var(--blue)">
+      <div class="ing-visual bebida">🥤<span class="ing-stock">${G.stock.bebida}</span></div>+ Bebida</button>`;
+
+  p.innerHTML=`
+    <div style="text-align:center;font-size:0.8em;color:var(--gray);margin-bottom:8px;">
+      🕐 ${timeStr()} | 👥 ${rem} próximo${rem!==1?'s':''} na fila
+    </div>
+    <div class="client-card">
+      <div class="client-header">
+        <div class="client-avatar">${client.emoji}</div>
+        <div class="client-info"><h3>${client.name}</h3><p>${client.personality}</p></div>
+      </div>
+      <div class="client-order">
+        <h4>📋 ${order.name} (${fmt(order.price)})</h4>
+        <div class="order-items">${pills}</div>
+        ${!hasDrink&&G.stock.bebida>0?'<p style="margin-top:8px;font-size:0.82em;color:var(--green)">💡 +Bebida (+R$ 5)</p>':''}
+      </div>
+    </div>
+    <div class="assembly-area">
+      <div class="assembly-title">🔥 Monte na Chapa</div>
+      <div class="chapa-surface">
+        <div class="chapa-heat"></div><div class="steam-container">${steam}</div>
+        ${hasDrink?'<div class="drink-added"><div class="drink-cup"></div><div class="drink-label">🥤 Bebida</div></div>':''}
+        ${burger}
+      </div>
+      <div class="ingredient-buttons">${btns}</div>
+      <div class="action-buttons">
+        <button class="action-btn btn-serve" onclick="serveBurger()">✅ Servir</button>
+        <button class="action-btn btn-clear" onclick="clearAssembly()">🗑️ Limpar</button>
+      </div>
+    </div>`;
+}
+
+function renderAll(){renderHeader();renderStock();renderShop();renderLog();renderActions();renderService()}
+
+function buyItem(id){
+  const item=SHOP.find(s=>s.id===id);
+  if(!item||G.money<item.price){notify('Dinheiro insuficiente!','error');return}
+  G.money-=item.price;G.dailyCost+=item.price;G.stock[item.id]+=item.qty;
+  addLog(`Comprou ${item.qty}x ${item.name} por ${fmt(item.price)}`,'buy');
+  notify(`+${item.qty} ${item.name}!`,'success');advanceTime(TIME_BUY);renderAll();
+}
+
+function openDoors(){
+  G.phase='open';G.hour=OPEN_HOUR;G.minute=0;G.queueFinished=false;
+  addLog(`🚪 Aberto! ${OPEN_HOUR}:00 - ${CLOSE_HOUR}:00`,'event');
+  addNarrative(`🚪 <strong>Portas abertas!</strong> Chapa esquentando! Funciona até ${CLOSE_HOUR}:00.`,'success');
+  notify('Lanchonete aberta!','success');generateClientQueue();renderAll();
+}
+
+function generateClientQueue(){
+  G.clientQueue=[];
+  const base=6+Math.floor(Math.random()*4)+Math.floor(G.day/2);
+  const extra=G.juninhoHelped?2:0;
+  const num=Math.min(base+extra,20);
+  for(let i=0;i<num;i++){
+    const c=randomFrom(CLIENT_POOL),o=randomFrom(c.orders);
+    G.clientQueue.push({...c,currentOrder:{...o},id:i});
+  }
+  addLog(`👥 ${num} clientes na fila hoje!`,'event');
+}
+
+function nextClient(){
+  if(isClosingTime()){notify(`${timeStr()} - Feche o dia!`,'warning');renderAll();return}
+
+  // FILA VAZIA → marca como finalizada
+  if(G.clientQueue.length===0){
+    G.queueFinished=true;
+    addNarrative('🎉 <strong>Fila vazia!</strong> Todos os clientes foram atendidos! Você pode encerrar o expediente.','success');
+    addLog('✅ Fila vazia! Todos atendidos.','event');
+    notify('Fila vazia! Pode encerrar o dia!','success');
+    renderAll();
+    return;
+  }
+
+  G.currentClient=G.clientQueue.shift();G.currentAssembly=[];
+  addLog(`${G.currentClient.emoji} ${G.currentClient.name}: ${G.currentClient.currentOrder.name}`,'');
+  addNarrative(`${G.currentClient.emoji} <strong>${G.currentClient.name}</strong> senta no balcão.<br>
+    <em>"${G.currentClient.personality}"</em><br>
+    Pedido: <strong>${G.currentClient.currentOrder.name}</strong> - ${fmt(G.currentClient.currentOrder.price)}`,'');
+  renderAll();
+}
+
+function addIngredient(k){
+  if(G.stock[k]<=0){notify(`Sem ${INGREDIENTS[k].name}!`,'error');return}
+  G.stock[k]--;G.currentAssembly.push(k);renderAll();
+}
+
+function addDrink(){
+  if(G.stock.bebida<=0){notify('Sem bebidas!','error');return}
+  if(G.currentAssembly.includes('bebida_added')){notify('Já adicionou!','warning');return}
+  G.stock.bebida--;G.currentAssembly.push('bebida_added');
+  notify('🥤 Bebida!','success');renderAll();
+}
+
+function clearAssembly(){
+  G.currentAssembly.forEach(i=>{if(i==='bebida_added')G.stock.bebida++;else G.stock[i]++});
+  G.currentAssembly=[];notify('Limpo!','info');renderAll();
+}
+
+function serveBurger(){
+  if(!G.currentClient)return;
+  const client=G.currentClient,order=client.currentOrder;
+  const assembled=G.currentAssembly.filter(i=>i!=='bebida_added');
+  const hasDrink=G.currentAssembly.includes('bebida_added');
+  const oS=[...order.items].sort().join(','),aS=[...assembled].sort().join(',');
+
+  let sat=0,pay=0,fb='';
+  if(oS===aS){
+    sat=90+Math.floor(Math.random()*11);pay=order.price+(hasDrink?5:0);
+    fb=randomFrom(client.dialogOnServe||['"Obrigado!" 😊']);
+    addNarrative(`✅ <strong>Perfeito!</strong><br><div class="speaker">${client.name}:</div>${fb}`,'success');
+    notify(`Perfeito! +${fmt(pay)}`,'success');
+  }else{
+    const om={},am={};
+    order.items.forEach(i=>{om[i]=(om[i]||0)+1});
+    assembled.forEach(i=>{am[i]=(am[i]||0)+1});
+    let m=0;for(const k in om)m+=Math.min(om[k]||0,am[k]||0);
+    const pct=order.items.length>0?m/order.items.length:0;
+    if(pct>=0.6){
+      sat=40+Math.floor(pct*40);pay=Math.floor(order.price*(0.5+pct*0.3))+(hasDrink?3:0);
+      fb='"Não era bem isso..." 😐';
+      addNarrative(`⚠️ <strong>Aceitável com erros.</strong><br>${client.name}: ${fb}<br>Pagou ${fmt(pay)}.`,'warning');
+      notify(`Com erros. ${fmt(pay)}`,'warning');
+    }else{
+      sat=Math.max(5,Math.floor(pct*40));pay=Math.max(0,Math.floor(order.price*0.3));
+      fb='"Não é o que pedi!" 😠';
+      addNarrative(`❌ <strong>Errado!</strong><br>${client.name}: ${fb}<br>${pay>0?fmt(pay)+' por pena.':'Sem pagar!'}`,'warning');
+      notify('Insatisfeito!','error');addLog(`😠 ${client.name} reclamou!`,'complaint');
+    }
+  }
+
+  G.money+=pay;G.dailyRevenue+=pay;G.dailySatisfaction.push(sat);G.clientsServed++;
+  addLog(`💰 ${client.name}: ${fmt(pay)} (${sat}%)`,'sale');
+  advanceTime(G.chapaUpgrade?TIME_SERVICE_FAST:TIME_SERVICE);
+
+  if(client.type==='juninho'&&sat>=70){G.juninhoHelped=true;addNarrative('📱 <em>Juninho postou no Insta!</em>','success')}
+
+  G.currentClient=null;G.currentAssembly=[];
+  if(pay>0)G.totalProfit+=pay*0.5;
+
+  // Verifica se a fila acabou APÓS servir
+  if(G.clientQueue.length===0&&!G.queueFinished){
+    G.queueFinished=true;
+    addNarrative('🎉 <strong>Último cliente atendido!</strong> A fila está vazia. Hora de encerrar o expediente!','success');
+    addLog('✅ Todos os clientes atendidos!','event');
+    notify('Fila vazia! Encerre o expediente!','success');
+  }
+  else if(isClosingTime()){
+    addNarrative(`🌙 <strong>${timeStr()}</strong> - Expediente acabou!`,'warning');
+    notify(`${CLOSE_HOUR}:00 - Feche o dia!`,'warning');
+  }else if(isWarningTime()){
+    const ml=(CLOSE_HOUR-G.hour)*60-G.minute;
+    addNarrative(`⏰ <em>${timeStr()} - ~${ml}min restantes.</em>`,'warning');
+  }
+
+  if(G.totalProfit>=5000&&!G.secretSauce){triggerWin();return}
+  renderAll();
+}
+
+function closeDay(){
+  G.phase='closed';G.hour=CLOSE_HOUR;G.minute=0;
+  G.currentClient=null;G.currentAssembly=[];G.queueFinished=false;
+
+  const rev=G.dailyRevenue,cost=G.dailyCost,profit=rev-cost;
+  const avg=G.dailySatisfaction.length>0?Math.round(G.dailySatisfaction.reduce((a,b)=>a+b,0)/G.dailySatisfaction.length):0;
+  const notServed=G.clientQueue.length;
+
+  document.getElementById('reportTitle').textContent=`📊 Relatório - Dia ${G.day}`;
+  document.getElementById('reportBody').innerHTML=`
+    <div class="report-row"><span class="label">📅 Dia</span><span class="value">${G.day}</span></div>
+    <div class="report-row"><span class="label">👥 Atendidos</span><span class="value">${G.dailySatisfaction.length}</span></div>
+    ${notServed>0?`<div class="report-row"><span class="label">😔 Não atendidos</span><span class="value negative">${notServed}</span></div>`:''}
+    <div class="report-row"><span class="label">💵 Receita</span><span class="value positive">${fmt(rev)}</span></div>
+    <div class="report-row"><span class="label">🛒 Custos</span><span class="value negative">-${fmt(cost)}</span></div>
+    <div class="report-row total"><span class="label">💰 Lucro</span><span class="value ${profit>=0?'positive':'negative'}">${fmt(profit)}</span></div>
+    <div class="report-row"><span class="label">😊 Satisfação</span><span class="value">${avg}%</span></div>
+    <div class="report-row"><span class="label">🏦 Saldo</span><span class="value">${fmt(G.money)}</span></div>
+    <div class="report-row"><span class="label">📈 Lucro Total</span><span class="value">${fmt(Math.max(0,G.totalProfit))}</span></div>
+    <div style="margin-top:20px"><button class="big-btn btn-next" onclick="closeReport()">✅ Entendido</button></div>`;
+  document.getElementById('reportModal').classList.add('active');
+  addLog(`📊 Dia ${G.day}: Lucro ${fmt(profit)}, Sat ${avg}%`,'event');
+  if(G.money<0)setTimeout(()=>triggerGameOver(),1500);
+  renderAll();
+}
+
+function closeReport(){document.getElementById('reportModal').classList.remove('active')}
+
+function nextDay(){
+  G.day++;G.hour=5;G.minute=0;G.phase='prep';
+  G.dailyRevenue=0;G.dailyCost=0;G.dailySatisfaction=[];G.log=[];
+  G.clientQueue=[];G.queueFinished=false;
+  if(G.juninhoHired){G.money-=30;G.dailyCost+=30;addLog('💸 R$ 30 Juninho','buy')}
+  addNarrative(`☀️ <strong>DIA ${G.day} - 05:00h</strong><br>${DAY_INTROS[(G.day-1)%DAY_INTROS.length]}`,'');
+  checkStoryEvents();
+  if(G.day%4===0&&!G.chapaUpgrade&&G.money>=300)setTimeout(()=>triggerEvent(STORY_EVENTS.find(e=>e.id==='chapa_upgrade')),1500);
+  if(G.shady_meat&&G.day>=5&&!G.inspectionDone&&Math.random()>0.4)setTimeout(()=>triggerEvent(STORY_EVENTS.find(e=>e.id==='inspection')),2000);
+  if(G.day%3===0){
+    const t=['🏢 Magnata: "GigaBurger - Desista!" 😤','🏢 GigaBurger painel gigante. Fiéis continuam! 💪','🏢 Magnata tweetou "artesanal é passado." Internet discordou. 😏'];
+    addNarrative(randomFrom(t),'gigaburger');
+  }
+  renderAll();
+}
+
+function checkStoryEvents(){STORY_EVENTS.forEach(e=>{if(e.day===G.day&&!G.eventsTriggered.includes(e.id))setTimeout(()=>triggerEvent(e),1000)})}
+
+function triggerEvent(ev){
+  if(!ev||G.eventsTriggered.includes(ev.id))return;
+  G.eventsTriggered.push(ev.id);
+  document.getElementById('eventTitle').textContent=ev.title;
+  let h=`<p style="line-height:1.8;margin-bottom:15px">${ev.text}</p><div class="event-choices">`;
+  ev.choices.forEach(c=>{h+=`<button class="event-choice" onclick="handleChoice('${c.action}')">${c.text}</button>`});
+  h+='</div>';document.getElementById('eventBody').innerHTML=h;
+  document.getElementById('eventModal').classList.add('active');
+  addLog(`⚡ ${ev.title}`,'event');
+}
+
+function handleChoice(a){
+  document.getElementById('eventModal').classList.remove('active');
+  switch(a){
+    case'accept_shady':G.stock.carne+=20;G.money-=15;G.dailyCost+=15;G.shady_meat=true;
+      addNarrative('🥩 Carne suspeita... a que custo? 😰','warning');addLog('🥩 20 carnes R$15','buy');notify('20 carnes! Cuidado...','warning');break;
+    case'refuse_shady':addNarrative('🚫 Recusou! Nonô ficaria orgulhoso! 💚','success');notify('Integridade!','success');break;
+    case'hire_juninho':G.juninhoHired=true;G.chapaUpgrade=true;G.money-=30;G.dailyCost+=30;
+      addNarrative('👦 Juninho contratado! 10min/cliente! 🎉','success');notify('Juninho!','success');break;
+    case'refuse_juninho':addNarrative('👦 "Se mudar de ideia..." 😔','warning');break;
+    case'sell_out':G.money+=2000;triggerGameOverSellout();return;
+    case'refuse_magnata':addNarrative('🔥 <strong>"NUNCA!"</strong> 💪','success');notify('Sua lanchonete!','success');G.juninhoHelped=true;break;
+    case'accept_critic':addNarrative('🎩 Preparado! 🌟','event');break;
+    case'pay_bill':if(G.money>=50){G.money-=50;G.dailyCost+=50;G.lightBillPaid=true;addNarrative('💡 Conta paga! ✅','success');notify('Paga!','success')}
+      else{addNarrative('❌ Sem R$ 50! 😰','warning');notify('Sem dinheiro!','error')}break;
+    case'delay_bill':addNarrative('⚡ Adiou... ⚠️','warning');break;
+    case'face_inspection':if(G.shady_meat){G.money-=200;addNarrative('🚨 MULTA R$ 200! 😱','gigaburger');notify('MULTA!','error');G.shady_meat=false;G.inspectionDone=true}
+      else{addNarrative('✅ Aprovado! 🏆','success');notify('Aprovado!','success');G.inspectionDone=true}break;
+    case'buy_chapa':if(G.money>=300){G.money-=300;G.dailyCost+=300;G.chapaUpgrade=true;addNarrative('🔧 UPGRADE! 10min! 🚀','success');notify('Chapa!','success')}
+      else notify('Sem dinheiro!','error');break;
+    case'refuse_chapa':addNarrative('🔧 "Me procure." 📇','');break;
+  }
+  renderAll();
+}
+
+function triggerWin(){
+  G.secretSauce=true;G.gameOver=true;
+  const s=document.getElementById('endScreen');
+  s.style.background='linear-gradient(180deg,#1a0a00,#5D4037 50%,#FF6B35)';
+  document.getElementById('endEmoji').textContent='🏆🍔';
+  document.getElementById('endTitle').textContent='O Rei do Hambúrguer!';
+  document.getElementById('endText').innerHTML=`O cofre abriu! <strong>Molho Secreto Nonô</strong> e uma carta:<br><br>
+    <em>"O segredo nunca foi o molho — foi você."</em><br>— Seu Nonô ❤️<br><br>
+    📊 ${fmt(G.totalProfit)} | 📅 ${G.day} dias | 💰 ${fmt(G.money)}<br><br>GigaBurger fechou. O bairro é seu! 🎉`;
+  s.classList.add('active');
+}
+
+function triggerGameOver(){
+  G.gameOver=true;const s=document.getElementById('endScreen');
+  s.style.background='linear-gradient(180deg,#1a0a00,#2C1810 50%,#000)';
+  document.getElementById('endEmoji').textContent='😔';
+  document.getElementById('endTitle').textContent='Falência...';
+  document.getElementById('endText').innerHTML=`Dinheiro acabou... Magnata comprou o ponto.<br>Cofre nunca aberto.<br><br>
+    📅 ${G.day} dias | 💰 ${fmt(G.money)}<br><br><em>Cozinheiros nunca desistem... 🔥</em>`;
+  s.classList.add('active');
+}
+
+function triggerGameOverSellout(){
+  G.gameOver=true;const s=document.getElementById('endScreen');
+  s.style.background='linear-gradient(180deg,#1a0a00,#333 50%,#000)';
+  document.getElementById('endEmoji').textContent='💸';
+  document.getElementById('endTitle').textContent='Vendeu o Legado...';
+  document.getElementById('endText').innerHTML=`Chaves entregues. Placa arrancada. Cofre no lixo.<br><br>
+    💰 R$ 2.000 | 📅 ${G.day} dias<br><br><em>O que vale mais não tem preço...</em> 😢`;
+  s.classList.add('active');
+}
+
+function startGame(){
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('gameContainer').style.display='block';
+  addNarrative(`☀️ <strong>DIA 1 - 05:00h</strong><br>
+    Placa de neon limpa. Balcão com marcas do avô. <strong>R$ 200</strong> no caixa. Magnata buzinou.<br>
+    🔒 Cofre: <strong>R$ 5.000 de lucro</strong> para abrir.<br>
+    🕐 <strong>${OPEN_HOUR}:00 - ${CLOSE_HOUR}:00</strong>`,'');
+  addNarrative(`📋 <strong>Dica:</strong> Compre na <strong>Loja</strong> antes de abrir! Estoque: 10 pães, 10 carnes, 10 queijos. Monte na ordem certa! 🍔`,'success');
+  addLog('🌅 Dia 1!','event');renderAll();
+}
+
+renderAll();
+</script>
+</body>
+</html>
